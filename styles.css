@@ -8,23 +8,35 @@
   font-display: swap;
 }
 
-@font-face {
-  font-family: "Forma DJR Micro";
-  src: local("Forma DJR Micro Bold"),
-       local("FormaDJRMicro-Bold"),
-       url("fonts/FormaDJRMicro-Bold-Testing.otf") format("opentype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
+/*
+  Design system
+  - One type style: 12px on an 18px line. Hierarchy comes from colour only
+    (black = primary, 40% black = secondary), never from size or weight.
+  - Everything sits on a 6px grid; spacing uses the steps below.
+  - Every project image is 360px tall; widths follow each photo's own ratio
+    (16:9 = 640, 4:3 = 480, 5:4 = 450, 3:4 = 270, 2:3 = 240).
+  - Captions share the 640px measure of a landscape image, so their edges line up.
+*/
 :root {
   --color-bg: #fff;
   --color-text: #000;
   --color-text-muted: rgba(0, 0, 0, 0.4);
   --font-sans: "Forma DJR Micro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --font-size: 12px;
+  --line: 18px;
+
+  --space-xs: 6px;
+  --space-s: 12px;
+  --space-m: 24px;
+  --space-l: 36px;
+  --space-xl: 48px;
+
   --sidebar-width: 336px;
-  --sidebar-padding: 48px;
+  --sidebar-padding: var(--space-xl);
+  --image-height: 360px;
+  --measure: 640px;          /* a 16:9 image at 360px tall */
+  --measure-portrait: 270px; /* a 3:4 image at 360px tall */
 
   /* Motion: every animation uses this curve (speed peaks at 60% of the duration),
      with durations between 100ms and 300ms. */
@@ -49,11 +61,14 @@ html, body {
 body {
   font-family: var(--font-sans);
   font-weight: 500;
-  font-size: 12px;
-  line-height: 0.9;
+  font-size: var(--font-size);
+  line-height: var(--line);
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+p, ul { margin: 0; }
 
 .page {
   display: flex;
@@ -69,7 +84,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 36px;
+  gap: var(--space-l);
   width: var(--sidebar-width);
   height: 100vh;
   padding: var(--sidebar-padding);
@@ -90,9 +105,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 16px;
-  width: calc(var(--sidebar-width) - 2 * var(--sidebar-padding));
-  margin: 0;
+  gap: var(--space-xs);
   padding: 0;
   list-style: none;
 }
@@ -107,24 +120,20 @@ body {
 }
 
 .wordmark:focus-visible,
-.nav a:focus-visible {
+.nav a:focus-visible,
+.project-links a:focus-visible {
   outline: 1px solid currentColor;
   outline-offset: 3px;
 }
 
-/* Sidebar body copy (About) */
+/* Sidebar body copy (About, Contact): fills the sidebar's text column */
 .sidebar-copy {
-  flex-shrink: 0;
-  width: 260px; /* intentionally wider than the 240px content box, per design */
-  line-height: 1.35;
-}
-
-.sidebar-copy p {
-  margin: 0;
+  width: 100%;
+  max-width: 240px; /* the desktop sidebar's text column (336 - 2 × 48) */
 }
 
 .sidebar-copy p + p {
-  margin-top: 1.35em; /* one blank line, as in the design */
+  margin-top: var(--line); /* one blank line */
 }
 
 .content {
@@ -144,7 +153,7 @@ body {
   top: 0;
   left: 0;
   z-index: 5;
-  font-size: 16px;
+  font-size: calc(var(--font-size) * 1.05); /* 5% larger than the body text (12.6px) */
   line-height: 1;
   color: var(--color-text);
   user-select: none;
@@ -177,20 +186,29 @@ body {
   }
 }
 
-/* Work */
+/* Work: one project per screen, image and caption centred as a group */
 .project {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 36px;
+  gap: var(--space-m);
   min-height: 100vh;
-  padding: 48px;
+  padding: var(--space-xl);
   overflow: hidden;
   container-type: inline-size;
 }
 
-/* Gallery: every image keeps the gallery's height and its own proportions (no cropping).
+/* Scroll fade: gallery.js marks projects outside the view; they fade in as they arrive. */
+.project > * {
+  transition: opacity var(--duration-fast) var(--ease);
+}
+
+.project.is-offscreen > * {
+  opacity: 0;
+}
+
+/* Gallery: every image is --image-height tall at its own proportions (no cropping).
    Each img's width/height attributes hold its display size; the frame wraps the active one. */
 .gallery {
   position: relative;
@@ -200,6 +218,7 @@ body {
 .slide {
   max-width: 100%;
   height: auto;
+  object-fit: cover; /* each img's inline aspect-ratio pins it to exactly 360px tall */
   display: none;
 }
 
@@ -242,7 +261,6 @@ body {
     z-index: 10;
     display: flex;
     gap: 2px;
-    font-size: 12px;
     line-height: 1;
     pointer-events: none;
     user-select: none;
@@ -264,37 +282,32 @@ body {
   }
 }
 
-/* Caption row: project info on the left, links on the right.
-   Its width scales with the column (598px of a 786px-wide photo ≈ 76%),
-   so it keeps the same margins under the image as the window narrows.
-   (76cqi = 76% of the project column; .project is the size container.) */
+/* Caption: project info on the left, links on the right, spanning the same
+   640px measure as a landscape image (100cqi = the column, when narrower). */
 .project-caption {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0 24px;
-  width: min(598px, 76cqi);
-  min-height: 36px;
-  line-height: 1.53;
+  gap: var(--space-xs) var(--space-m);
+  width: min(var(--measure), 100cqi);
   white-space: nowrap;
 }
 
+/* Portrait projects: the caption takes the 270px width of a 3:4 image and stacks,
+   so its edges still line up with the photo's. */
+.project--portrait .project-caption {
+  width: min(var(--measure-portrait), 100cqi);
+  flex-direction: column;
+  gap: var(--line);
+}
+
 /* Too narrow for side-by-side: links go under the project info */
-@container (max-width: 560px) {
+@container (max-width: 432px) {
   .project-caption {
     flex-direction: column;
-    gap: 12px;
+    gap: var(--line);
     white-space: normal;
   }
-}
-
-.project-info p {
-  margin: 0;
-  letter-spacing: 0.08px;
-}
-
-.project-title {
-  font-weight: 700;
 }
 
 .project-services {
@@ -302,11 +315,9 @@ body {
 }
 
 .project-links {
-  margin: 0;
   padding: 0;
   list-style: none;
   color: var(--color-text-muted);
-  letter-spacing: 0.06px;
 }
 
 .project-links a {
@@ -322,15 +333,9 @@ body {
   color: var(--color-text);
 }
 
-.project-links a:focus-visible {
-  outline: 1px solid currentColor;
-  outline-offset: 2px;
-}
-
 @media (max-width: 900px) {
-  :root { --sidebar-padding: 24px; }
+  :root { --sidebar-padding: var(--space-m); }
   .page { flex-direction: column; align-items: stretch; }
   .sidebar { position: static; width: 100%; height: auto; }
-  .nav { width: auto; }
-  .sidebar-copy { max-width: 100%; }
-  .project { min-height: 0; padding: 24px 24px 48px; }}
+  .project { min-height: 0; padding: var(--space-m) var(--space-m) var(--space-xl); }
+}

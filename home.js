@@ -10,7 +10,7 @@
   // Tuning
   const FIELD = 160;      // px: cursor starts pushing within this distance
   const PUSH = 2.4;       // strength of the push at point-blank range
-  const MIN_GAP = 44;     // px: the cursor can never get closer than this
+  const MIN_GAP = 44;     // px: the cursor can never get closer than this (from the + centre)
   const HOME_PULL = 0.004;// gentle spring back to the starting spot
   const DAMPING = 0.88;   // 1 = no friction
   const EDGE = 16;        // px: keep this far from the window edges
