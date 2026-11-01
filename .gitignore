@@ -1,0 +1,8 @@
+# Full-size images from Figma (223MB). The site uses the web-sized copies in images/gallery.
+images/originals/
+
+# macOS
+.DS_Store
+
+# Local tooling
+.claude/

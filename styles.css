@@ -1,0 +1,336 @@
+@font-face {
+  font-family: "Forma DJR Micro";
+  src: local("Forma DJR Micro Medium"),
+       local("FormaDJRMicro-Medium"),
+       url("fonts/FormaDJRMicro-Medium-Testing.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Forma DJR Micro";
+  src: local("Forma DJR Micro Bold"),
+       local("FormaDJRMicro-Bold"),
+       url("fonts/FormaDJRMicro-Bold-Testing.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --color-bg: #fff;
+  --color-text: #000;
+  --color-text-muted: rgba(0, 0, 0, 0.4);
+  --font-sans: "Forma DJR Micro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --sidebar-width: 336px;
+  --sidebar-padding: 48px;
+
+  /* Motion: every animation uses this curve (speed peaks at 60% of the duration),
+     with durations between 100ms and 300ms. */
+  --ease: cubic-bezier(0.42, 0, 0.72, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 300ms;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 0.9;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.page {
+  display: flex;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 36px;
+  width: var(--sidebar-width);
+  height: 100vh;
+  padding: var(--sidebar-padding);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.wordmark,
+.nav a {
+  display: block;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--duration-base) var(--ease);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  width: calc(var(--sidebar-width) - 2 * var(--sidebar-padding));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wordmark:hover,
+.wordmark:focus-visible,
+.wordmark[aria-current="page"],
+.nav a:hover,
+.nav a:focus-visible,
+.nav a[aria-current="page"] {
+  color: var(--color-text);
+}
+
+.wordmark:focus-visible,
+.nav a:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* Sidebar body copy (About) */
+.sidebar-copy {
+  flex-shrink: 0;
+  width: 260px; /* intentionally wider than the 240px content box, per design */
+  line-height: 1.35;
+}
+
+.sidebar-copy p {
+  margin: 0;
+}
+
+.sidebar-copy p + p {
+  margin-top: 1.35em; /* one blank line, as in the design */
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Page content fades in on arrival; the menu stays put so it doesn't flicker between pages. */
+.sidebar-copy,
+.content {
+  animation: fade-in var(--duration-slow) var(--ease) both;
+}
+
+/* Home page "+" (positioned by home.js; free to roam the whole viewport) */
+.plus {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--color-text);
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none; /* clicks pass straight through, even in theory */
+  visibility: hidden; /* shown once home.js has placed it */
+  will-change: transform;
+}
+
+.plus.is-ready {
+  visibility: visible;
+  /* "backwards" (not "both") so the warp fade's opacity transition still works afterwards */
+  animation: fade-in var(--duration-slow) var(--ease) backwards;
+}
+
+/* Quick fade used when it escapes from a corner */
+.plus.is-warping {
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease);
+}
+
+.plus.is-ready:not(.is-warping) {
+  transition: opacity var(--duration-fast) var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* Work */
+.project {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  min-height: 100vh;
+  padding: 48px;
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+/* Gallery: every image keeps the gallery's height and its own proportions (no cropping).
+   Each img's width/height attributes hold its display size; the frame wraps the active one. */
+.gallery {
+  position: relative;
+  max-width: 100%;
+}
+
+.slide {
+  max-width: 100%;
+  height: auto;
+  display: none;
+}
+
+.slide.is-active {
+  display: block;
+}
+
+.gallery-btn {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.gallery-btn--prev { left: 0; }
+.gallery-btn--next { right: 0; }
+
+.gallery-btn:focus-visible {
+  outline: 1px solid var(--color-text);
+  outline-offset: -1px;
+}
+
+/* Custom "<>" cursor (mouse/trackpad only) */
+.gallery-cursor {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .gallery-btn { cursor: none; }
+
+  .gallery-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    display: flex;
+    gap: 2px;
+    font-size: 12px;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+    opacity: 0;
+    transition: opacity var(--duration-fast) var(--ease);
+    transform: translate(-50%, -50%);
+  }
+
+  .gallery-cursor.is-visible { opacity: 1; }
+
+  .gallery-cursor span {
+    color: rgba(255, 255, 255, 0.4);
+    transition: color var(--duration-fast) var(--ease);
+  }
+
+  .gallery-cursor[data-side="prev"] .gallery-cursor-prev,
+  .gallery-cursor[data-side="next"] .gallery-cursor-next {
+    color: #fff;
+  }
+}
+
+/* Caption row: project info on the left, links on the right.
+   Its width scales with the column (598px of a 786px-wide photo ≈ 76%),
+   so it keeps the same margins under the image as the window narrows.
+   (76cqi = 76% of the project column; .project is the size container.) */
+.project-caption {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0 24px;
+  width: min(598px, 76cqi);
+  min-height: 36px;
+  line-height: 1.53;
+  white-space: nowrap;
+}
+
+/* Too narrow for side-by-side: links go under the project info */
+@container (max-width: 560px) {
+  .project-caption {
+    flex-direction: column;
+    gap: 12px;
+    white-space: normal;
+  }
+}
+
+.project-info p {
+  margin: 0;
+  letter-spacing: 0.08px;
+}
+
+.project-title {
+  font-weight: 700;
+}
+
+.project-services {
+  color: var(--color-text-muted);
+}
+
+.project-links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-muted);
+  letter-spacing: 0.06px;
+}
+
+.project-links a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: from-font;
+  text-underline-position: from-font;
+  transition: color var(--duration-base) var(--ease);
+}
+
+.project-links a:hover,
+.project-links a:focus-visible {
+  color: var(--color-text);
+}
+
+.project-links a:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  :root { --sidebar-padding: 24px; }
+  .page { flex-direction: column; align-items: stretch; }
+  .sidebar { position: static; width: 100%; height: auto; }
+  .nav { width: auto; }
+  .sidebar-copy { max-width: 100%; }
+  .project { min-height: 0; padding: 24px 24px 48px; }}
