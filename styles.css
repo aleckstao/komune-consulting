@@ -361,9 +361,7 @@ p, ul { margin: 0; }
 
 .project-links a {
   color: inherit;
-  text-decoration: underline;
-  text-decoration-thickness: from-font;
-  text-underline-position: from-font;
+  text-decoration: none; /* the arrow and the hover colour mark them as links */
   transition: color var(--duration-base) var(--ease);
 }
 
