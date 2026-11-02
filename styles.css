@@ -196,7 +196,7 @@ p, ul { margin: 0; }
   top: 0;
   left: 0;
   z-index: 5;
-  font-size: calc(var(--font-size) * 1.05); /* 5% larger than the body text (12.6px) */
+  font-size: calc(var(--font-size) * 1.05 * 1.025); /* 7.6% larger than the body text (~12.9px) */
   line-height: 1;
   color: var(--color-text);
   user-select: none;

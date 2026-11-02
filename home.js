@@ -8,9 +8,10 @@
   if (!plus || !content) return;
 
   // Tuning
-  const FIELD = 160;      // px: cursor starts pushing within this distance
-  const PUSH = 2.4;       // strength of the push at point-blank range
-  const MIN_GAP = 44;     // px: the cursor can never get closer than this (from the + centre)
+  const FIELD = 240;      // px: cursor starts pushing within this distance
+  const PUSH = 4;         // strength of the push at point-blank range
+  const MIN_GAP = 72;     // px: the cursor can never get closer than this (from the + centre)
+  const LOOKAHEAD = 5;    // frames: it reacts to where the cursor is heading, not just where it is
   const HOME_PULL = 0.004;// gentle spring back to the starting spot
   const DAMPING = 0.88;   // 1 = no friction
   const EDGE = 16;        // px: keep this far from the window edges
@@ -19,7 +20,12 @@
   const pos = { x: 0, y: 0 };
   const vel = { x: 0, y: 0 };
   const home = { x: 0, y: 0 };
-  const pointer = { x: -9999, y: -9999, vx: 0, vy: 0, active: false };
+  const pointer = { x: -9999, y: -9999, vx: 0, vy: 0, sx: 0, sy: 0, active: false };
+
+  // Where the cursor will be in a few frames, from its smoothed velocity.
+  function threat() {
+    return { x: pointer.x + pointer.sx * LOOKAHEAD, y: pointer.y + pointer.sy * LOOKAHEAD };
+  }
   let half = { w: 0, h: 0 };
   let warping = false;
   let last = performance.now();
@@ -77,16 +83,22 @@
 
   // Hard rule: the cursor can never reach it, however fast it moves.
   function keepAway() {
-    const dx = pos.x - pointer.x;
-    const dy = pos.y - pointer.y;
+    if (!pointer.active) return;
+    gapFrom(threat());
+    gapFrom(pointer);
+  }
+
+  function gapFrom(point) {
+    const dx = pos.x - point.x;
+    const dy = pos.y - point.y;
     const d = Math.hypot(dx, dy);
-    if (!pointer.active || d >= MIN_GAP) return;
+    if (d >= MIN_GAP) return;
     // Dead-centre hit: get shoved ahead in the direction the cursor is moving.
     const ux = d > 0.001 ? dx / d : pointer.vx || 1;
     const uy = d > 0.001 ? dy / d : pointer.vy || 0;
     const ul = Math.hypot(ux, uy) || 1;
-    pos.x = pointer.x + (ux / ul) * MIN_GAP;
-    pos.y = pointer.y + (uy / ul) * MIN_GAP;
+    pos.x = point.x + (ux / ul) * MIN_GAP;
+    pos.y = point.y + (uy / ul) * MIN_GAP;
   }
 
   function step(now) {
@@ -97,8 +109,9 @@
       let fx = (home.x - pos.x) * HOME_PULL;
       let fy = (home.y - pos.y) * HOME_PULL;
 
-      const dx = pos.x - pointer.x;
-      const dy = pos.y - pointer.y;
+      const t = threat();
+      const dx = pos.x - t.x;
+      const dy = pos.y - t.y;
       const dist = Math.hypot(dx, dy) || 0.001;
 
       if (pointer.active && dist < FIELD) {
@@ -115,6 +128,10 @@
 
       keepAway();
       confine();
+      render();
+    } else {
+      // Fading out to jump elsewhere: keep dodging so it can't be caught mid-fade.
+      keepAway();
       render();
     }
 
@@ -139,15 +156,16 @@
   function track(e) {
     pointer.vx = e.clientX - pointer.x;
     pointer.vy = e.clientY - pointer.y;
+    if (!pointer.active) { pointer.vx = 0; pointer.vy = 0; } // first event: no jump from off-screen
+    pointer.sx = pointer.sx * 0.6 + pointer.vx * 0.4;
+    pointer.sy = pointer.sy * 0.6 + pointer.vy * 0.4;
     pointer.x = e.clientX;
     pointer.y = e.clientY;
     pointer.active = true;
     // Don't wait for the next frame: a fast flick could otherwise land on it.
-    if (!warping) {
-      keepAway();
-      confine();
-      render();
-    }
+    keepAway();
+    if (!warping) confine();
+    render();
   }
 
   window.addEventListener('pointermove', track, { passive: true });
