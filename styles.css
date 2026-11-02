@@ -12,10 +12,21 @@
   Design system
   - One type style: 12px on an 18px line. Hierarchy comes from colour only
     (black = primary, 40% black = secondary), never from size or weight.
-  - Everything sits on a 6px grid; spacing uses the steps below.
-  - Every project image is 360px tall; widths follow each photo's own ratio
-    (16:9 = 640, 4:3 = 480, 5:4 = 450, 3:4 = 270, 2:3 = 240).
-  - Captions share the 640px measure of a landscape image, so their edges line up.
+  - Everything sits on a 6px baseline; spacing uses the steps below.
+  - Every project image is 384px tall; widths follow each photo's own ratio
+    (16:9 = 683, 4:3 = 512, 5:4 = 480, 3:4 = 288, 2:3 = 256).
+  - Text lines up with image edges. A caption takes the width of a landscape image
+    (683px), or of a portrait one (288px) under portrait projects. About and Contact
+    copy uses that same 288px column (~54 characters a line).
+
+  Grid: 12 columns across the window, 48px outer margins, 24px gutters.
+    columns 1-3   sidebar: wordmark and nav hang from the top margin, RSS sits on the
+                  bottom margin
+    column  4     left empty, as a wide gutter between navigation and content
+    columns 5-12  the field: images, captions and copy are centred in it
+  The focal point is the centre of the field, halfway down the window. Every image
+  is centred on it, and so is the About and Contact copy column, so moving between
+  pages the eye stays on one spot. Text itself is always set flush left.
 */
 :root {
   --color-bg: #fff;
@@ -32,11 +43,13 @@
   --space-l: 36px;
   --space-xl: 48px;
 
-  --sidebar-width: 336px;
-  --sidebar-padding: var(--space-xl);
-  --image-height: 360px;
-  --measure: 640px;          /* a 16:9 image at 360px tall */
-  --measure-portrait: 270px; /* a 3:4 image at 360px tall */
+  --columns: 12;
+  --margin: var(--space-xl);
+  --gutter: var(--space-m);
+  --image-height: 384px;
+  --measure: 683px;          /* a 16:9 image at 384px tall */
+  --measure-portrait: 288px; /* a 3:4 image at 384px tall; ~54 characters a line */
+  --horizon: max(var(--margin), calc(50vh - var(--image-height) / 2)); /* image top when centred in the window */
 
   /* Motion: every animation uses this curve (speed peaks at 60% of the duration),
      with durations between 100ms and 300ms. */
@@ -70,30 +83,40 @@ body {
 
 p, ul { margin: 0; }
 
+/* The page grid. Content areas inherit it through subgrid, so every column line
+   is shared by the sidebar, the copy, the images and the captions. */
 .page {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  column-gap: var(--gutter);
+  align-items: start;
+  align-content: start; /* rows stay their own height; don't stretch to fill the window */
   min-height: 100vh;
+  padding: 0 var(--margin);
 }
 
-/* Sidebar */
+/* Sidebar: columns 1-3, held in place while the page scrolls */
 .sidebar {
+  grid-column: 1 / 4;
   position: sticky;
   top: 0;
-  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-l);
-  width: var(--sidebar-width);
   height: 100vh;
-  padding: var(--sidebar-padding);
-  overflow: hidden;
-  background: var(--color-bg);
+  padding: var(--margin) 0;
+}
+
+/* RSS: pushed down onto the bottom margin */
+.sidebar-foot {
+  margin-top: auto;
 }
 
 .wordmark,
-.nav a {
+.nav a,
+.project-nav a,
+.sidebar-foot a {
   display: block;
   color: var(--color-text-muted);
   text-decoration: none;
@@ -101,7 +124,10 @@ p, ul { margin: 0; }
   transition: color var(--duration-base) var(--ease);
 }
 
-.nav {
+/* Project list (Work): same type, colour and 6px spacing as the nav. The sidebar's
+   36px gap puts it as far below the nav as the nav is below the wordmark. */
+.nav,
+.project-nav {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -115,34 +141,54 @@ p, ul { margin: 0; }
 .wordmark[aria-current="page"],
 .nav a:hover,
 .nav a:focus-visible,
-.nav a[aria-current="page"] {
+.nav a[aria-current="page"],
+.project-nav a:hover,
+.project-nav a:focus-visible,
+.project-nav a.is-current,
+.sidebar-foot a:hover,
+.sidebar-foot a:focus-visible {
   color: var(--color-text);
 }
 
 .wordmark:focus-visible,
 .nav a:focus-visible,
+.project-nav a:focus-visible,
+.sidebar-foot a:focus-visible,
 .project-links a:focus-visible {
   outline: 1px solid currentColor;
   outline-offset: 3px;
 }
 
-/* Sidebar body copy (About, Contact): fills the sidebar's text column */
-.sidebar-copy {
-  width: 100%;
-  max-width: 240px; /* the desktop sidebar's text column (336 - 2 × 48) */
-}
-
-.sidebar-copy p + p {
-  margin-top: var(--line); /* one blank line */
-}
-
+/* Content: columns 4-12 (column 4 stays empty) */
 .content {
-  flex: 1;
+  grid-column: 4 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
   min-width: 0;
 }
 
+/* About, Contact: the copy column is centred in the field. About's copy is centred
+   halfway down the window, on the middle of a Work image; Contact starts on the same
+   line as About, so the first line never moves between the two pages.
+   --about-height is the About copy's height (6 lines); update it if the copy changes. */
+.content--centered {
+  --about-height: calc(6 * var(--line));
+  align-content: start;
+  padding: max(var(--margin), calc(50vh - var(--about-height) / 2)) 0 var(--margin);
+}
+
+.page-copy {
+  grid-column: 2 / -1;
+  justify-self: center;
+  width: min(var(--measure-portrait), 100%); /* the column of a portrait caption */
+  text-wrap: balance; /* lines of a paragraph come out close to equal length */
+}
+
+.page-copy p + p {
+  margin-top: var(--line); /* one blank line */
+}
+
 /* Page content fades in on arrival; the menu stays put so it doesn't flicker between pages. */
-.sidebar-copy,
 .content {
   animation: fade-in var(--duration-slow) var(--ease) both;
 }
@@ -186,17 +232,17 @@ p, ul { margin: 0; }
   }
 }
 
-/* Work: one project per screen, image and caption centred as a group */
+/* Work: one project per screen. The image is centred on the focal point and the
+   caption hangs below it on the text columns. */
 .project {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-m);
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-template-rows: var(--image-height) auto; /* image row, caption row */
+  align-content: start;
+  row-gap: var(--space-l);
   min-height: 100vh;
-  padding: var(--space-xl);
-  overflow: hidden;
-  container-type: inline-size;
+  padding: var(--horizon) 0 var(--margin);
 }
 
 /* Scroll fade: gallery.js marks projects outside the view; they fade in as they arrive. */
@@ -211,6 +257,9 @@ p, ul { margin: 0; }
 /* Gallery: every image is --image-height tall at its own proportions (no cropping).
    Each img's width/height attributes hold its display size; the frame wraps the active one. */
 .gallery {
+  grid-column: 2 / -1;
+  justify-self: center;
+  align-self: center; /* a scaled-down image stays centred on the focal point */
   position: relative;
   max-width: 100%;
 }
@@ -282,32 +331,25 @@ p, ul { margin: 0; }
   }
 }
 
-/* Caption: project info on the left, links on the right, spanning the same
-   640px measure as a landscape image (100cqi = the column, when narrower). */
+/* Caption: centred under the image at the width of a landscape image, so its edges
+   meet the photo's. Project info on the left, links on the right. */
 .project-caption {
+  grid-column: 2 / -1;
+  justify-self: center;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-xs) var(--space-m);
-  width: min(var(--measure), 100cqi);
-  white-space: nowrap;
+  width: min(var(--measure), 100%);
 }
 
-/* Portrait projects: the caption takes the 270px width of a 3:4 image and stacks,
-   so its edges still line up with the photo's. */
+.project-links { white-space: nowrap; }
+
+/* Portrait projects: the caption narrows to the 288px width of a 3:4 image and stacks */
 .project--portrait .project-caption {
-  width: min(var(--measure-portrait), 100cqi);
+  width: min(var(--measure-portrait), 100%);
   flex-direction: column;
   gap: var(--line);
-}
-
-/* Too narrow for side-by-side: links go under the project info */
-@container (max-width: 432px) {
-  .project-caption {
-    flex-direction: column;
-    gap: var(--line);
-    white-space: normal;
-  }
 }
 
 .project-services {
@@ -333,9 +375,17 @@ p, ul { margin: 0; }
   color: var(--color-text);
 }
 
+/* Phones and narrow windows: a 4-column grid with 24px margins. The sidebar scrolls
+   away with the page and everything stacks in one full-width column. */
 @media (max-width: 900px) {
-  :root { --sidebar-padding: var(--space-m); }
-  .page { flex-direction: column; align-items: stretch; }
-  .sidebar { position: static; width: 100%; height: auto; }
-  .project { min-height: 0; padding: var(--space-m) var(--space-m) var(--space-xl); }
+  :root { --columns: 4; --margin: var(--space-m); }
+  .sidebar { grid-column: 1 / -1; position: static; height: auto; }
+  .sidebar-foot { margin-top: 0; }
+  .content { grid-column: 1 / -1; }
+  .content--centered { padding: 0 0 var(--space-xl); }
+  .page-copy,
+  .gallery,
+  .project-caption { grid-column: 1 / -1; justify-self: start; }
+  .project-caption { flex-direction: column; gap: var(--line); }
+  .project { min-height: 0; padding: 0 0 var(--space-xl); grid-template-rows: none; }
 }

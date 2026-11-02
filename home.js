@@ -28,7 +28,16 @@
     const r = plus.getBoundingClientRect();
     half = { w: r.width / 2, h: r.height / 2 };
     const c = content.getBoundingClientRect();
-    home.x = c.left + c.width / 2;
+    // Desktop: the content spans grid columns 4-12, but column 4 is left empty, so the
+    // focal point is the middle of columns 5-12 (where images and copy are centred).
+    let left = c.left, width = c.width;
+    if (window.innerWidth > 900) {
+      const gutter = parseFloat(getComputedStyle(content.parentElement).columnGap) || 0;
+      const column = (c.width - 8 * gutter) / 9;
+      left += column + gutter;
+      width -= column + gutter;
+    }
+    home.x = left + width / 2;
     // Desktop: middle of the window. Phone layout: middle of the space below the menu.
     home.y = c.top > 0 ? (c.top + window.innerHeight) / 2 : window.innerHeight / 2;
   }
