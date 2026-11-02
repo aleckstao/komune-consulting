@@ -1,7 +1,6 @@
 // Work page.
 // - Galleries: click the left/right half of an image to go back/forward. A custom "<>"
 //   cursor follows the mouse over images; the side you're on is white.
-// - Project list: the project on screen is shown in black in the sidebar.
 
 (function () {
   const content = document.querySelector('.content');
@@ -78,40 +77,6 @@
     document.querySelectorAll('.project .gallery').forEach((gallery) => observer.observe(gallery));
   }
 
-  // --- Scroll: mark the project on screen in the sidebar ------------------------------
-  const links = new Map(
-    [...document.querySelectorAll('.project-nav a')].map((a) => [a.hash.slice(1), a]));
-  let frame = 0;
-
-  // The current project is the one crossing the middle of the window.
-  function markCurrent() {
-    const middle = window.innerHeight / 2;
-    let current = null;
-    document.querySelectorAll('.project').forEach((section) => {
-      const r = section.getBoundingClientRect();
-      if (r.top <= middle && r.bottom > middle) current = projectId(section);
-    });
-    links.forEach((a, id) => {
-      const on = id === current;
-      a.classList.toggle('is-current', on);
-      if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
-    });
-  }
-
-  function update() {
-    frame = 0;
-    markCurrent();
-  }
-
-  function queue() {
-    if (!frame) frame = requestAnimationFrame(update);
-  }
-
-  window.addEventListener('scroll', () => {
-    // Scrolling moves the page under a still mouse, so hide the cursor until it moves again.
-    if (cursor) cursor.classList.remove('is-visible');
-    queue();
-  }, { passive: true });
-  window.addEventListener('resize', queue);
-  update();
+  // Scrolling moves the page under a still mouse, so hide the cursor until it moves again.
+  window.addEventListener('scroll', () => cursor && cursor.classList.remove('is-visible'), { passive: true });
 })();

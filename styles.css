@@ -115,7 +115,6 @@ p, ul { margin: 0; }
 
 .wordmark,
 .nav a,
-.project-nav a,
 .sidebar-foot a {
   display: block;
   color: var(--color-text-muted);
@@ -124,10 +123,7 @@ p, ul { margin: 0; }
   transition: color var(--duration-base) var(--ease);
 }
 
-/* Project list (Work): same type, colour and 6px spacing as the nav. The sidebar's
-   36px gap puts it as far below the nav as the nav is below the wordmark. */
-.nav,
-.project-nav {
+.nav {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -142,9 +138,6 @@ p, ul { margin: 0; }
 .nav a:hover,
 .nav a:focus-visible,
 .nav a[aria-current="page"],
-.project-nav a:hover,
-.project-nav a:focus-visible,
-.project-nav a.is-current,
 .sidebar-foot a:hover,
 .sidebar-foot a:focus-visible {
   color: var(--color-text);
@@ -152,7 +145,6 @@ p, ul { margin: 0; }
 
 .wordmark:focus-visible,
 .nav a:focus-visible,
-.project-nav a:focus-visible,
 .sidebar-foot a:focus-visible,
 .project-links a:focus-visible {
   outline: 1px solid currentColor;
@@ -186,6 +178,11 @@ p, ul { margin: 0; }
 
 .page-copy p + p {
   margin-top: var(--line); /* one blank line */
+}
+
+/* Secondary lines in page copy (e.g. the address on Contact) */
+.page-copy .muted {
+  color: var(--color-text-muted);
 }
 
 /* Page content fades in on arrival; the menu stays put so it doesn't flicker between pages. */
